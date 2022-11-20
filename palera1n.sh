@@ -251,8 +251,10 @@ _dfuhelper() {
     local step_one;
     if [[ "$1" = 0x801* ]]; then
         step_one="Hold volume down + side button"
+        step_two="Release side button, but keep holding volume down"
     else
         step_one="Hold home + power button"
+        step_two="Release power button, but keep holding home button"
     fi
     echo "[*] Press any key when ready for DFU mode"
     read -n 1 -s
@@ -261,7 +263,7 @@ _dfuhelper() {
     sleep 3
     "$dir"/irecovery -c "reset"
     step 1 "Keep holding"
-    step 10 'Release side button, but keep holding volume down'
+    step 10 "$step_two"
     sleep 1
     
     if [ "$(get_device_mode)" = "dfu" ]; then
@@ -313,6 +315,19 @@ _exit_handler() {
 }
 trap _exit_handler EXIT
 
+# Print the banner now
+
+echo "palera1n | Version $version-$branch-$commit"
+echo "Written by Nebula and Mineek | Some code and ramdisk from Nathan | Loader app by Amy"
+echo ""
+
+version=""
+parse_cmdline "$@"
+
+if [ "$debug" = "1" ]; then
+    set -o xtrace
+fi
+
 # ===========
 # Fixes
 # ===========
@@ -327,6 +342,17 @@ fi
 # ============
 # Dependencies
 # ============
+
+if [ "$os" = "Linux" ]; then
+    linux_commands=lsusb
+fi
+
+for command in python3 git unzip ssh scp pgrep $linux_commands; do
+    if ! command -v $command > /dev/null;  then
+        echo "[-] $command not found, please install it!"
+        exit 1;
+    fi
+done
 
 # Download gaster
 if [ -e "$dir"/gaster ]; then
@@ -370,17 +396,6 @@ chmod +x "$dir"/*
 # ============
 # Start
 # ============
-
-echo "palera1n | Version $version-$branch-$commit"
-echo "Written by Nebula and Mineek | Some code and ramdisk from Nathan | Loader app by Amy"
-echo ""
-
-version=""
-parse_cmdline "$@"
-
-if [ "$debug" = "1" ]; then
-    set -o xtrace
-fi
 
 if [ "$clean" = "1" ]; then
     rm -rf boot* work .tweaksinstalled
